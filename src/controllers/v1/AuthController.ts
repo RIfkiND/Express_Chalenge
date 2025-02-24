@@ -3,6 +3,7 @@ import User from "../../models/user";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import { loginSchema, userSchema } from "../../schema/userschema";
+import { getReasonPhrase, StatusCodes } from "http-status-codes";
 
 class AuthController {
   async register(req: Request, res: Response) {
@@ -61,7 +62,7 @@ class AuthController {
      // Return token with success
      res.json({ token });
    } catch (error) {
-     res.status(500).json({ error: (error as Error).message });
+  res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({error : getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR  )});
    }
   }
 }

@@ -1,7 +1,7 @@
-import { errors } from "./../../../node_modules/@sideway/address/lib/index.d";
 import { Request, Response } from "express";
 import Gadgets from "../../models/gadgets";
 import { gadgetSchema } from "../../schema/gadgetschema";
+import { getReasonPhrase, StatusCodes } from "http-status-codes";
 
 class GadgetsController {
   async allGadgets(req: Request, res: Response) {
@@ -9,7 +9,7 @@ class GadgetsController {
       const result = await Gadgets.GetGadgets();
       res.json(result);
     } catch (error) {
-      res.status(500).json({ error: (error as Error).message });
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({error : getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR  )});
     }
   }
 
@@ -20,15 +20,15 @@ class GadgetsController {
     };
     const { error } = gadgetSchema.validate(req.body);
     if (error) {
-      return res.status(400).json({ error: error.details[0].message });
+      return res.status(StatusCodes.BAD_REQUEST).send({error : getReasonPhrase(StatusCodes.BAD_REQUEST)});
     }
     const { name, status } = req.body;
     try {
       const codenames = generateCodeName();
       const newGadgets = await Gadgets.CreateGadgedts(name, status ,codenames);
-      res.status(201).json(newGadgets);
+      res.status(StatusCodes.OK).json(newGadgets);
     } catch (error) {
-      res.status(500).json({ error: (error as Error).message });
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({error : getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR  )});
     }
   }
 
@@ -39,9 +39,9 @@ class GadgetsController {
       const updatedUser = await Gadgets.UpdateGadgets(id, name, email);
       updatedUser
         ? res.json(updatedUser)
-        : res.status(404).json({ message: "User not found" });
+        : res.status(StatusCodes.NOT_FOUND).json({ message: "User not found" });
     } catch (error) {
-      res.status(500).json({ error: (error as Error).message });
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({error : getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR  )});
     }
   }
 
@@ -50,10 +50,10 @@ class GadgetsController {
     try {
       const success = await Gadgets.DeleteGadgets(id);
       success
-        ? res.json({ message: "User deleted" })
-        : res.status(404).json({ message: "User not found" });
+        ? res.json({ message: "Gadgets deleted" })
+        : res.status(StatusCodes.NOT_FOUND).json({ message: "Gadgets not found" });
     } catch (error) {
-      res.status(500).json({ error: (error as Error).message });
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({error : getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR  )});
     }
   }
 }
