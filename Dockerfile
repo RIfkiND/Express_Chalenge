@@ -1,38 +1,40 @@
-# syntax=docker/dockerfile:1
-
-# Comments are provided throughout this file to help you get started.
-# If you need more help, visit the Dockerfile reference guide at
-# https://docs.docker.com/go/dockerfile-reference/
-
-# Want to help us make this template better? Share your feedback here: https://forms.gle/ybq9Krt8jtBL3iCk7
-
-ARG NODE_VERSION=18.18.0
-
-FROM node:${NODE_VERSION}-alpine
-
-# Use production node environment by default.
-ENV NODE_ENV production
-
-
+# Use the official Bun image
+FROM oven/bun:1 AS base
 WORKDIR /usr/src/app
 
-# Download dependencies as a separate step to take advantage of Docker's caching.
-# Leverage a cache mount to /root/.npm to speed up subsequent builds.
-# Leverage a bind mounts to package.json and package-lock.json to avoid having to copy them into
-# into this layer.
-RUN --mount=type=bind,source=package.json,target=package.json \
-    --mount=type=bind,source=package-lock.json,target=package-lock.json \
-    --mount=type=cache,target=/root/.npm \
-    npm ci --omit=dev
+# Install dependencies into a temporary directory (for caching)
+FROM base AS install
+RUN mkdir -p /temp/dev
+COPY package.json bun.lock /temp/dev/
+RUN cd /temp/dev && bun install --frozen-lockfile
 
-# Run the application as a non-root user.
-USER node
+# Install production dependencies
+RUN mkdir -p /temp/prod
+COPY package.json bun.lock /temp/prod/
+RUN cd /temp/prod && bun install --frozen-lockfile --production
 
-# Copy the rest of the source files into the image.
+# Copy node_modules and project files
+FROM base AS prerelease
+COPY --from=install /temp/dev/node_modules node_modules
 COPY . .
 
-# Expose the port that the application listens on.
-EXPOSE 3003
+# Build the TypeScript code
+ENV NODE_ENV=production
+RUN bun test
+RUN bun run build
 
-# Run the application.
-CMD /npm
+# Create final image with production dependencies
+FROM base AS release
+WORKDIR /usr/src/app
+COPY --from=install /temp/prod/node_modules node_modules
+COPY --from=prerelease /usr/src/app/dist ./dist
+COPY --from=prerelease /usr/src/app/package.json .  
+
+# Set permissions & use non-root user
+USER bun
+
+# Expose the correct port for Express
+EXPOSE 3000
+
+# Run the application
+CMD ["bun", "run", "dist/index.js"]

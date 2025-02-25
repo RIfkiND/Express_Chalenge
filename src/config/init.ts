@@ -14,7 +14,7 @@ const createTables = async () => {
     EXCEPTION
       WHEN duplicate_object THEN null;
     END $$;
-    -- Create users table
+    -- Create users table 
     CREATE TABLE IF NOT EXISTS users (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         name VARCHAR(30) NOT NULL,

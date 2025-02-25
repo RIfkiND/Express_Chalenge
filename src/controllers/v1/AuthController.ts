@@ -1,17 +1,17 @@
 import { Request, Response } from "express";
-import User from "../../models/user";
+import User from "../../models/User";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import { loginSchema, userSchema } from "../../schema/userschema";
 import { getReasonPhrase, StatusCodes } from "http-status-codes";
 
 class AuthController {
-  async register(req: Request, res: Response) {
+  async register(req: Request, res: Response): Promise<void> {
     try {
       //validation
       const { error } = userSchema.validate(req.body);
       if (error)
-        return res
+        res
           .status(StatusCodes.BAD_REQUEST)
           .send({ error: getReasonPhrase(StatusCodes.BAD_REQUEST) });
       //request user credentials
@@ -20,10 +20,12 @@ class AuthController {
       //logic to check existinguser
       const existingUser = await User.FindUser(email);
 
-      if (existingUser)
-        return res
+      if (existingUser) {
+        res
           .status(StatusCodes.BAD_REQUEST)
           .send({ error: "Email already exists" });
+        return;
+      }
 
       const user = await User.CreateUser(name, email, password);
 
@@ -36,14 +38,16 @@ class AuthController {
   }
 
   //logic to login
-  async login(req: Request, res: Response) {
+  async login(req: Request, res: Response): Promise<void> {
     try {
       // validation
       const { error } = loginSchema.validate(req.body);
-      if (error)
-        return res
+      if (error) {
+        res
           .status(StatusCodes.BAD_REQUEST)
           .send({ error: getReasonPhrase(StatusCodes.BAD_REQUEST) });
+        return;
+      }
 
       const { email, password } = req.body;
 
@@ -51,17 +55,19 @@ class AuthController {
       const user = await User.FindUser(email);
 
       if (!user) {
-        return res
-          .status(StatusCodes.BAD_REQUEST)
-          .send({ message: "Invalid email or password" });
+        res
+          .status(StatusCodes.UNAUTHORIZED)
+          .json({ error: "Invalid email or password" });
+        return;
       }
 
       //  Compare hashed password
       const isMatch = await bcrypt.compare(password, user.password!);
       if (!isMatch) {
-        return res
+        res
           .status(StatusCodes.UNAUTHORIZED)
           .send({ message: "password incorect" });
+        return;
       }
       //  generate JWT token
       const token = jwt.sign(
