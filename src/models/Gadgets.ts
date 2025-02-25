@@ -1,15 +1,8 @@
 import pool from "../config/db";
 import { v4 as uuid } from "uuid";
-
-
-export interface ingadgets{
-    id?: string,
-    name: string,
-    status: string,
-}
+import { ingadgets } from "../types/gadgetstype";
 
 class Gadgets {
-
   async GetGadgets(): Promise<ingadgets[]> {
     const result = await pool.query("SELECT * FROM gadgets");
     //add rabndom success probability
@@ -20,11 +13,15 @@ class Gadgets {
     return gadgets;
   }
 
-  async CreateGadgedts(name: string, status: string ,codename :string): Promise<ingadgets> {
+  async CreateGadgedts(
+    name: string,
+    status: string,
+    codename: string
+  ): Promise<ingadgets> {
     const id = uuid();
     const result = await pool.query(
       "INSERT INTO gadgets (name, status, codename) VALUES ($1, $2, $3)",
-      [id ,name, status, codename]
+      [id, name, status, codename]
     );
     return result.rows[0];
   }
@@ -48,7 +45,13 @@ class Gadgets {
     ]);
     return result.rowCount > 0;
   }
-}
 
+  async FilterGadgets(status: string) {
+    const result = await pool.query("SELECT FROM gadgets WHERE Stauts = $1 ", [
+      status,
+    ]);
+    return result.rows;
+  }
+}
 
 export default new Gadgets();

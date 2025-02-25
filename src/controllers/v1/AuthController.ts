@@ -8,62 +8,75 @@ import { getReasonPhrase, StatusCodes } from "http-status-codes";
 class AuthController {
   async register(req: Request, res: Response) {
     try {
-        //validation
+      //validation
       const { error } = userSchema.validate(req.body);
       if (error)
-        return res.status(400).json({ message: error.details[0].message });
+        return res
+          .status(StatusCodes.BAD_REQUEST)
+          .send({ error: getReasonPhrase(StatusCodes.BAD_REQUEST) });
       //request user credentials
       const { name, email, password } = req.body;
 
       //logic to check existinguser
-      const existingUser = await User.FindUser(email);  
+      const existingUser = await User.FindUser(email);
 
       if (existingUser)
-        return res.status(400).json({ message: "Email already exists" });
+        return res
+          .status(StatusCodes.BAD_REQUEST)
+          .send({ error: "Email already exists" });
 
       const user = await User.CreateUser(name, email, password);
 
-      res.status(201).json(user);
+      res.status(StatusCodes.CREATED).json(user);
     } catch (error) {
-      res.status(500).json({ error: (error as Error).message });
+      res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .send({ error: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR) });
     }
   }
 
   //logic to login
   async login(req: Request, res: Response) {
-   try {
-     // validation
-     const { error } = loginSchema.validate(req.body);
-     if (error)
-       return res.status(400).json({ message: error.details[0].message });
+    try {
+      // validation
+      const { error } = loginSchema.validate(req.body);
+      if (error)
+        return res
+          .status(StatusCodes.BAD_REQUEST)
+          .send({ error: getReasonPhrase(StatusCodes.BAD_REQUEST) });
 
-     const { email, password } = req.body;
+      const { email, password } = req.body;
 
-     // Find user  email
-     const user = await User.FindUser(email);
+      // Find user  email
+      const user = await User.FindUser(email);
 
-     if (!user) {
-       return res.status(401).json({ message: "Invalid email or password" });
-     }
+      if (!user) {
+        return res
+          .status(StatusCodes.BAD_REQUEST)
+          .send({ message: "Invalid email or password" });
+      }
 
-     //  Compare hashed password
-     const isMatch = await bcrypt.compare(password, user.password!);
-     if (!isMatch) {
-       return res.status(401).json({ message: "password incorect" });
-     }
+      //  Compare hashed password
+      const isMatch = await bcrypt.compare(password, user.password!);
+      if (!isMatch) {
+        return res
+          .status(StatusCodes.UNAUTHORIZED)
+          .send({ message: "password incorect" });
+      }
+      //  generate JWT token
+      const token = jwt.sign(
+        { id: user.id, email: user.email },
+        process.env.AUTH_SECRET!,
+        { expiresIn: "1h" }
+      );
 
-     //  generate JWT token
-     const token = jwt.sign(
-       { id: user.id, email: user.email },
-       process.env.AUTH_SECRET!,
-       { expiresIn: "1h" }
-     );
-
-     // Return token with success
-     res.json({ token });
-   } catch (error) {
-  res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({error : getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR  )});
-   }
+      // Return token with success
+      res.json({ token });
+    } catch (error) {
+      res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .send({ error: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR) });
+    }
   }
 }
 

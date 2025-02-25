@@ -3,13 +3,8 @@ import pool from "../config/db";
 import bcrypt from "bcrypt";
 import { v4 as uuidv4 } from "uuid";
 import { userSchema } from "../schema/userschema";
+import { IUser } from "../types/UserType";
 
-export interface IUser {
-  id?: string;
-  name: string;
-  email: string;
-  password?: string;
-}
 
 class User {
   async FindUser(email: string): Promise<IUser | null> {
