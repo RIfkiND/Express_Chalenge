@@ -1,6 +1,6 @@
 import pool from "../config/db";
 import { v4 as uuid } from "uuid";
-import { ingadgets } from "../types/gadgetstype";
+import { ingadgets } from "../types/GadgetsType";
 
 class Gadgets {
   async GetGadgets(): Promise<ingadgets[]> {
@@ -16,12 +16,11 @@ class Gadgets {
   async CreateGadgedts(
     name: string,
     status: string,
-    codename: string
+    codename: string,
   ): Promise<ingadgets> {
-    const id = uuid();
     const result = await pool.query(
-      "INSERT INTO gadgets (name, status, codename) VALUES ($1, $2, $3)",
-      [id, name, status, codename]
+      "INSERT INTO gadgets ( name, status, codename) VALUES ($1, $2, $3) RETURNING *",
+      [ name, status, codename]
     );
     return result.rows[0];
   }

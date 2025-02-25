@@ -5,14 +5,10 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const { Pool }  = pkg;
+const { Pool } = pkg;
 
 const pool = new Pool({
-  user: process.env.DB_USER,
-  host: process.env.DB_HOST,
-  database: process.env.DB_NAME,
-  password: process.env.DB_PASSWORD,
-  port: process.env.DB_PORT,
+  connectionString: process.env.DATABASE_URL,
 });
 
 //Handle Succesfull Connection
@@ -20,19 +16,19 @@ pool.on("connect", () => {
   console.log("Connected to PostgreSQL");
 });
 //Handle UnSuccesfull Connection
-pool.on("error",(err)=>{
-    console.error("Failed To Connect",err)
-    process.exit(1);
-})
+pool.on("error", (err) => {
+  console.error("Failed To Connect", err);
+  process.exit(1);
+});
 
 export const DatabaseConnection = async (): Promise<boolean> => {
   try {
-        const client = await pool.connect();
-        client.release();
-        return true;
+    const client = await pool.connect();
+    client.release();
+    return true;
   } catch (error) {
-     console.error(" Database connection failed:", error);
-     return false;
+    console.error(" Database connection failed:", error);
+    return false;
   }
 };
 

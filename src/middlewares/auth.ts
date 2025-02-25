@@ -3,7 +3,7 @@ import { Request, Response, NextFunction } from "express";
 import { getReasonPhrase, StatusCodes } from "http-status-codes";
 import jwt from "jsonwebtoken"
 
-interface Auth{
+interface Auth extends Request{
     [x: string]: any; // x-interface
     user?: any  
 }

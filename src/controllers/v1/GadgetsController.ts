@@ -1,7 +1,8 @@
 import { Request, Response } from "express";
-import Gadgets from "../../models/gadgets";
+import Gadgets from "../../models/Gadgets";
 import { gadgetSchema } from "../../schema/gadgetschema";
 import { getReasonPhrase, StatusCodes } from "http-status-codes";
+import { promises } from "dns";
 class GadgetsController {
   async allGadgets(res: Response) {
     try {
@@ -14,31 +15,29 @@ class GadgetsController {
     }
   }
 
-  async addGadgets(req: Request, res: Response) {
-    //The CodeName
+  async addGadgets(req: Request, res: Response): Promise<void> {
     const codenames = ["The Nightingale", "The Kraken"];
-   //Generate Random Code Name 
+
     const generateCodeName = (): string => {
       return codenames[Math.floor(Math.random() * codenames.length)];
     };
-    //Error Validation 
+
+    // Error Validation
     const { error } = gadgetSchema.validate(req.body);
     if (error) {
-      return res
-        .status(StatusCodes.BAD_REQUEST)
-        .send({ error: getReasonPhrase(StatusCodes.BAD_REQUEST) });
+      res.status(StatusCodes.BAD_REQUEST).json({ error: getReasonPhrase(StatusCodes.BAD_REQUEST) });
+      return;
     }
-    //request name and status 
+
+    // Extract name and status
     const { name, status } = req.body;
+    
     try {
-      const codenames = generateCodeName();
-      //request name and status
-      const newGadgets = await Gadgets.CreateGadgedts(name, status, codenames);
-      res.status(StatusCodes.OK).json(newGadgets);
-    } catch (error) {
-      res
-        .status(StatusCodes.INTERNAL_SERVER_ERROR)
-        .send({ error: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR) });
+      const codename = generateCodeName();
+      const newGadgets = await Gadgets.CreateGadgedts(name, status, codename);
+      res.status(StatusCodes.CREATED).json(newGadgets);
+    } catch (err) {
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR) });
     }
   }
 

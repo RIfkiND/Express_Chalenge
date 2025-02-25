@@ -1,4 +1,4 @@
-import { DatabaseConnection } from "../src/config/db";
+import { DatabaseConnection } from "../config/db";
 
 
 //this is unit test the database connection
